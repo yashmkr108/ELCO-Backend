@@ -33,7 +33,7 @@ authRouter.post('/signup', async (req: Request, res: Response) => {
     const parsedBody = requiredBody.safeParse(req.body);
 
     if (!parsedBody.success) {
-      const formattedErrors = z.treeifyError(parsedBody.error)
+      const formattedErrors = z.treeifyError(parsedBody.error);
       return res.status(HttpStatus.BAD_REQUEST).json({
         msg: 'Invalid Input Data',
         err: formattedErrors,

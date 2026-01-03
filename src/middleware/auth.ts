@@ -1,8 +1,8 @@
-import { RequestHandler ,Request,Response} from 'express';
+import { RequestHandler, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { HttpStatus } from '../constants/HttpStatus';
 
-export const auth: RequestHandler = (req:Request, res:Response, next) => {
+export const auth: RequestHandler = (req: Request, res: Response, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -10,7 +10,7 @@ export const auth: RequestHandler = (req:Request, res:Response, next) => {
     }
     const token = authHeader.split(' ')[1];
     const decode = jwt.verify(token, process.env.JWT_USER!) as { id: string };
-    
+
     req.id = decode.id;
 
     next();
