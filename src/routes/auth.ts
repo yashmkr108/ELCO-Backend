@@ -1,11 +1,16 @@
 import { Request, Response, Router } from 'express';
-// import jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { UserModel } from '../db/db';
 import { HttpStatus } from '../constants/HttpStatus';
 import { z } from 'zod';
 
 const authRouter: Router = Router();
+const JWT_USER = process.env.JWT_USER;
+
+if (!JWT_USER) {
+  throw new Error('JWT_USER is not defined in environment variables');
+}
 
 const requiredBody = z.object({
   username: z
@@ -59,26 +64,35 @@ authRouter.post('/signup', async (req: Request, res: Response) => {
 
     res.status(HttpStatus.CREATED).json({ msg: 'Signup Successful' });
   } catch (e) {
-    res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       msg: 'Signup Failed: ' + e,
     });
   }
 });
 
-// authRouter.post('/signin', (req: Request, res: Response) => {
-//   const { username, password } = req.body;
+authRouter.post('/signin', async (req: Request, res: Response) => {
+  const { email, password } = req.body;
 
-//   if (user) {
-//     const token = jwt.sign({ id: user.id }, process.env.JWT_USER!);
-//     res.json({
-//       msg: token,
-//     });
-//     return;
-//   }
+  const response = await UserModel.findOne({ email });
 
-//   res.json({
-//     msg: 'User is not found',
-//   });
-// });
+  if (!response) {
+    return res.status(HttpStatus.NOT_FOUND).json({
+      msg: 'User not exist',
+    });
+  }
+
+  const passwordMatch = await bcrypt.compare(password, response.password);
+
+  if (!passwordMatch) {
+    return res.status(HttpStatus.UNAUTHORIZED).json({
+      msg: 'Incorrect Credentials',
+    });
+  }
+
+  const token = jwt.sign({ id: response._id }, JWT_USER);
+  return res.status(HttpStatus.OK).json({
+    token
+  })
+});
 
 export default authRouter;
